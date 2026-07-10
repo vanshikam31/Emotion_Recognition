@@ -10,6 +10,16 @@ PROCESSED_DATASET_PATH = PROJECT_ROOT / "dataset" / "processed"
 # Model
 MODEL_PATH = PROJECT_ROOT / "saved_models"
 
+
+# Feature Path
+FEATURE_PATH = PROJECT_ROOT / "dataset" / "features"
+
+# Random State
+RANDOM_STATE = 42
+
+# Test Split
+TEST_SIZE = 0.2
+
 # Logs
 LOGS_PATH = PROJECT_ROOT / "logs"
 
