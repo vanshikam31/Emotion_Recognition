@@ -1,32 +1,47 @@
+"""
+preprocessing.py
+
+This module performs audio preprocessing for the
+Speech Emotion Recognition project.
+"""
+
 import librosa
 import numpy as np
 
-# Target Sampling Rate
-SAMPLE_RATE = 22050
+from src.config import SAMPLE_RATE, SAMPLES
 
-# Fixed audio duration (seconds)
-DURATION = 3
-
-# Total samples
-SAMPLES = SAMPLE_RATE * DURATION
 
 def load_audio(audio_path):
     """
     Load an audio file.
+
+    Parameters:
+        audio_path (str): Path to the audio file.
+
+    Returns:
+        tuple:
+            signal (numpy.ndarray): Audio signal
+            sample_rate (int): Sampling rate
     """
 
-    signal, sr = librosa.load(
+    signal, sample_rate = librosa.load(
         audio_path,
         sr=SAMPLE_RATE,
         mono=True
     )
 
-    return signal, sr
+    return signal, sample_rate
 
 
 def trim_silence(signal):
     """
     Remove leading and trailing silence.
+
+    Parameters:
+        signal (numpy.ndarray)
+
+    Returns:
+        numpy.ndarray
     """
 
     trimmed_signal, _ = librosa.effects.trim(signal)
@@ -36,7 +51,13 @@ def trim_silence(signal):
 
 def normalize_audio(signal):
     """
-    Normalize audio amplitude.
+    Normalize the audio amplitude.
+
+    Parameters:
+        signal (numpy.ndarray)
+
+    Returns:
+        numpy.ndarray
     """
 
     max_value = np.max(np.abs(signal))
@@ -49,7 +70,13 @@ def normalize_audio(signal):
 
 def pad_or_truncate(signal):
     """
-    Make every audio exactly 3 seconds.
+    Make every audio sample the same length.
+
+    Short audio -> Zero Padding
+    Long audio -> Truncation
+
+    Returns:
+        numpy.ndarray
     """
 
     if len(signal) < SAMPLES:
@@ -68,6 +95,15 @@ def pad_or_truncate(signal):
 def preprocess_audio(audio_path):
     """
     Complete preprocessing pipeline.
+
+    Steps:
+    1. Load audio
+    2. Trim silence
+    3. Normalize audio
+    4. Pad/Truncate
+
+    Returns:
+        numpy.ndarray
     """
 
     signal, _ = load_audio(audio_path)
