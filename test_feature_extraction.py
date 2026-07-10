@@ -1,0 +1,14 @@
+from src.dataset_loader import load_dataset
+from src.preprocessing import preprocess_audio
+from src.feature_extraction import extract_features
+
+df = load_dataset()
+
+audio_path = df.iloc[0]["path"]
+
+signal = preprocess_audio(audio_path)
+
+features = extract_features(signal)
+
+for name, value in features.items():
+    print(name, value.shape)
