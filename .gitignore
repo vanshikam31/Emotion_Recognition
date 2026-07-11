@@ -2,12 +2,13 @@ venv/
 __pycache__/
 *.pyc
 
-saved_models/
-
 logs/
+
+*.h5
+*.keras
 
 .ipynb_checkpoints/
 
 .DS_Store
 
-.env
+Thumbs.db
