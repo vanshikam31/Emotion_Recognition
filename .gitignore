@@ -4,9 +4,6 @@ __pycache__/
 
 logs/
 
-*.h5
-*.keras
-
 .ipynb_checkpoints/
 
 .DS_Store
