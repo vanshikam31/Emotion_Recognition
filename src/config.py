@@ -56,3 +56,14 @@ CNN_FILTERS_2 = 128
 
 KERNEL_SIZE = 3
 POOL_SIZE = 2
+
+
+# ==========================
+# Training Configuration
+# ==========================
+
+VALIDATION_SPLIT = 0.2
+
+RANDOM_STATE = 42
+
+MODEL_NAME = "saved_model.keras"
