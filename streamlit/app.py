@@ -3,6 +3,7 @@ import joblib
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+import time
 
 from src.predict import predict_emotion
 
@@ -127,6 +128,10 @@ uploaded_file = st.file_uploader(
     type=["wav"]
 )
 
+st.info(
+    "Supported format: **.wav** | Sample Rate: **22050 Hz**"
+)
+
 # ---------------------------------------------------
 # Prediction
 # ---------------------------------------------------
@@ -141,11 +146,26 @@ if uploaded_file is not None:
 
     st.audio(temp_path)
 
+    st.subheader("🎵 Uploaded Audio")
+
+    st.success("Audio uploaded successfully.")
+
     if st.button("🎯 Predict Emotion"):
 
         with st.spinner("Predicting Emotion..."):
 
-            emotion, confidence = predict_emotion(temp_path)
+            start = time.time()
+
+            try:
+                emotion, confidence = predict_emotion(temp_path)
+
+                end = time.time()
+
+                prediction_time = end - start
+
+            except Exception as e:
+                st.error(f"Prediction Failed: {e}")
+                st.stop()
 
         # ---------------- Prediction Card ----------------
 
@@ -179,6 +199,10 @@ if uploaded_file is not None:
                 "Confidence",
                 f"{max(confidence):.2f}%"
             )
+
+        st.caption(
+            f"Prediction completed in {prediction_time:.2f} seconds."
+)
 
         # ---------------- Confidence Chart ----------------
 
@@ -238,6 +262,58 @@ if uploaded_file is not None:
 
         )
 
+st.markdown("---")
+
+st.subheader("📌 Model Information")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric("Model", "CNN + BiLSTM")
+
+with col2:
+    st.metric("Dataset", "RAVDESS")
+
+with col3:
+    st.metric("Emotions", "8")
+
+st.markdown("---")
+
+st.subheader("📌 Model Information")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric("Model", "CNN + BiLSTM")
+
+with col2:
+    st.metric("Dataset", "RAVDESS")
+
+with col3:
+    st.metric("Emotions", "8")
+
+with st.expander("📖 About This Project"):
+
+    st.write("""
+This application predicts human emotions from speech using a CNN + BiLSTM Deep Learning model.
+
+Dataset:
+RAVDESS
+
+Audio Features:
+- MFCC
+- Chroma
+- Mel Spectrogram
+- RMS Energy
+- Zero Crossing Rate
+- Spectral Centroid
+
+Frameworks:
+TensorFlow
+Librosa
+Streamlit
+Scikit-learn
+""")
 # ---------------------------------------------------
 # Footer
 # ---------------------------------------------------
