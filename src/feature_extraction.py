@@ -122,3 +122,39 @@ def extract_all_features(signal):
     }
 
     return features
+
+def extract_features(audio_path):
+    """
+    Extract MFCC features for prediction.
+
+    Returns:
+        numpy.ndarray (40, 130)
+    """
+
+    signal, _ = librosa.load(
+        audio_path,
+        sr=SAMPLE_RATE
+    )
+
+    mfcc = librosa.feature.mfcc(
+        y=signal,
+        sr=SAMPLE_RATE,
+        n_mfcc=N_MFCC
+    )
+
+    # Pad or trim to fixed length
+    if mfcc.shape[1] < 130:
+
+        pad_width = 130 - mfcc.shape[1]
+
+        mfcc = np.pad(
+            mfcc,
+            pad_width=((0, 0), (0, pad_width)),
+            mode="constant"
+        )
+
+    else:
+
+        mfcc = mfcc[:, :130]
+
+    return mfcc
