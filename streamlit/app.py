@@ -1,8 +1,14 @@
-import streamlit as st
+import tempfile
+import joblib
 import pandas as pd
 import plotly.express as px
+import streamlit as st
 
 from src.predict import predict_emotion
+
+# ---------------------------------------------------
+# Page Configuration
+# ---------------------------------------------------
 
 st.set_page_config(
     page_title="Emotion Recognition",
@@ -10,25 +16,92 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🎤 Emotion Recognition from Speech")
+# ---------------------------------------------------
+# Custom CSS
+# ---------------------------------------------------
 
-st.write(
-    "Upload a speech (.wav) file and predict the emotion using our CNN + BiLSTM model."
+st.markdown("""
+<style>
+
+.main-title{
+    font-size:42px;
+    font-weight:bold;
+    color:#1E88E5;
+    text-align:center;
+}
+
+.sub-title{
+    font-size:18px;
+    color:gray;
+    text-align:center;
+    margin-bottom:30px;
+}
+
+.prediction-card{
+    background:#1E88E5;
+    color:white;
+    padding:20px;
+    border-radius:15px;
+    text-align:center;
+    font-size:30px;
+    font-weight:bold;
+}
+
+.footer{
+    text-align:center;
+    color:gray;
+    margin-top:50px;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# ---------------------------------------------------
+# Header
+# ---------------------------------------------------
+
+st.markdown(
+    '<p class="main-title">🎤 Emotion Recognition from Speech</p>',
+    unsafe_allow_html=True
 )
 
-st.sidebar.title("Model Information")
+st.markdown(
+    '<p class="sub-title">AI Powered Speech Emotion Recognition using CNN + BiLSTM</p>',
+    unsafe_allow_html=True
+)
 
-st.sidebar.markdown("""
+st.write(
+    "Upload a speech (.wav) file and predict the emotion using our trained deep learning model."
+)
+
+# ---------------------------------------------------
+# Sidebar
+# ---------------------------------------------------
+
+st.sidebar.title("📌 Project Information")
+
+st.sidebar.info("""
 ### Model
+CNN + BiLSTM
 
-- CNN + BiLSTM
+---
 
 ### Dataset
+RAVDESS
 
-- RAVDESS
+---
+
+### Audio Features
+- MFCC
+- Chroma
+- Mel Spectrogram
+- RMS Energy
+- Zero Crossing Rate
+- Spectral Centroid
+
+---
 
 ### Emotions
-
 - Angry
 - Calm
 - Disgust
@@ -39,16 +112,24 @@ st.sidebar.markdown("""
 - Surprise
 """)
 
+# ---------------------------------------------------
+# Load Label Encoder
+# ---------------------------------------------------
+
+encoder = joblib.load("saved_models/label_encoder.pkl")
+
+# ---------------------------------------------------
+# File Upload
+# ---------------------------------------------------
+
 uploaded_file = st.file_uploader(
     "Upload WAV File",
     type=["wav"]
 )
 
-if uploaded_file:
-
-    st.audio(uploaded_file)
-
-import tempfile
+# ---------------------------------------------------
+# Prediction
+# ---------------------------------------------------
 
 if uploaded_file is not None:
 
@@ -60,65 +141,116 @@ if uploaded_file is not None:
 
     st.audio(temp_path)
 
+    if st.button("🎯 Predict Emotion"):
 
-if uploaded_file is not None:
+        with st.spinner("Predicting Emotion..."):
 
-    if st.button("Predict Emotion"):
+            emotion, confidence = predict_emotion(temp_path)
 
-        emotion, confidence = predict_emotion(temp_path)
-        
-        st.success(f"Predicted Emotion: {emotion}")
+        # ---------------- Prediction Card ----------------
 
-import joblib
+        st.markdown(
+            f"""
+            <div class="prediction-card">
 
-encoder = joblib.load(
-    "saved_models/label_encoder.pkl"
-)
+            Predicted Emotion
 
-df = pd.DataFrame({
+            <br><br>
 
-    "Emotion": encoder.classes_,
+            {emotion}
 
-    "Confidence": confidence
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-})
+        # ---------------- Metrics ----------------
 
-df = df.sort_values(
+        col1, col2 = st.columns(2)
 
-    by="Confidence",
+        with col1:
+            st.metric(
+                "Predicted Emotion",
+                emotion
+            )
 
-    ascending=False
+        with col2:
+            st.metric(
+                "Confidence",
+                f"{max(confidence):.2f}%"
+            )
 
-)
+        # ---------------- Confidence Chart ----------------
 
-fig = px.bar(
+        st.subheader("📊 Confidence Distribution")
 
-    df,
+        df = pd.DataFrame({
 
-    x="Confidence",
+            "Emotion": encoder.classes_,
+            "Confidence": confidence
 
-    y="Emotion",
+        })
 
-    orientation="h",
+        df = df.sort_values(
+            by="Confidence",
+            ascending=False
+        )
 
-    text="Confidence",
+        fig = px.bar(
 
-    title="Confidence Scores"
+            df,
 
-)
+            x="Confidence",
 
-fig.update_traces(
+            y="Emotion",
 
-    texttemplate="%{text:.2f}",
+            orientation="h",
 
-    textposition="outside"
+            text="Confidence",
 
-)
+            color="Confidence",
 
-st.plotly_chart(
+            color_continuous_scale="Blues"
 
-    fig,
+        )
 
-    use_container_width=True
+        fig.update_traces(
 
+            texttemplate="%{text:.2f}",
+
+            textposition="outside"
+
+        )
+
+        fig.update_layout(
+
+            xaxis_title="Confidence (%)",
+
+            yaxis_title="Emotion"
+
+        )
+
+        st.plotly_chart(
+
+            fig,
+
+            use_container_width=True
+
+        )
+
+# ---------------------------------------------------
+# Footer
+# ---------------------------------------------------
+
+st.markdown("---")
+
+st.markdown(
+"""
+<div class="footer">
+
+Developed using TensorFlow • Streamlit • Librosa
+
+</div>
+""",
+unsafe_allow_html=True
 )
