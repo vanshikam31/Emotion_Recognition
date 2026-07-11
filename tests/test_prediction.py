@@ -9,6 +9,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.append(PROJECT_ROOT)
 
 from src.predict import predict_emotion
+
 import joblib
 
 audio_path = "dataset/raw/audio_speech_actors_01-24/Actor_01/03-01-01-01-01-01-01.wav"

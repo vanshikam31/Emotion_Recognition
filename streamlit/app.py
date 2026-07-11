@@ -1,332 +1,181 @@
+
+"""
+Premium Streamlit App Template
+Compatible with the existing backend:
+- src.predict.predict_emotion
+- saved_models/label_encoder.pkl
+
+Replace your existing streamlit/app.py with this template and
+merge any project-specific logic if needed.
+"""
+
+import time
 import tempfile
+
 import joblib
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-import time
 
 from src.predict import predict_emotion
 
-# ---------------------------------------------------
-# Page Configuration
-# ---------------------------------------------------
-
 st.set_page_config(
-    page_title="Emotion Recognition",
+    page_title="Speech Emotion Recognition",
     page_icon="🎤",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
-
-# ---------------------------------------------------
-# Custom CSS
-# ---------------------------------------------------
 
 st.markdown("""
 <style>
+#MainMenu{visibility:hidden;}
+footer{visibility:hidden;}
+header{visibility:hidden;}
+
+.stApp{
+background:linear-gradient(180deg,#F8FAFC,#EEF4FF);
+}
 
 .main-title{
-    font-size:42px;
-    font-weight:bold;
-    color:#1E88E5;
-    text-align:center;
+font-size:46px;
+font-weight:800;
+text-align:center;
+color:#0F172A;
 }
 
 .sub-title{
-    font-size:18px;
-    color:gray;
-    text-align:center;
-    margin-bottom:30px;
+text-align:center;
+font-size:20px;
+color:#475569;
+margin-bottom:30px;
 }
 
 .prediction-card{
-    background:#1E88E5;
-    color:white;
-    padding:20px;
-    border-radius:15px;
-    text-align:center;
-    font-size:30px;
-    font-weight:bold;
+background:linear-gradient(135deg,#2563EB,#1D4ED8);
+border-radius:20px;
+padding:30px;
+color:white;
+text-align:center;
+box-shadow:0 12px 35px rgba(37,99,235,.25);
 }
 
-.footer{
-    text-align:center;
-    color:gray;
-    margin-top:50px;
+.stButton>button{
+width:100%;
+height:52px;
+border-radius:14px;
+background:linear-gradient(135deg,#2563EB,#3B82F6);
+color:white;
+font-weight:bold;
 }
 
+[data-testid="stMetric"]{
+background:white;
+padding:15px;
+border-radius:16px;
+box-shadow:0 4px 18px rgba(0,0,0,.08);
+}
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------------------------------------------
-# Header
-# ---------------------------------------------------
+st.markdown('<div class="main-title">🎤 Speech Emotion Recognition</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-title">AI-Powered Emotion Detection using CNN + BiLSTM</div>', unsafe_allow_html=True)
 
-st.markdown(
-    '<p class="main-title">🎤 Emotion Recognition from Speech</p>',
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    '<p class="sub-title">AI Powered Speech Emotion Recognition using CNN + BiLSTM</p>',
-    unsafe_allow_html=True
-)
-
-st.write(
-    "Upload a speech (.wav) file and predict the emotion using our trained deep learning model."
-)
-
-# ---------------------------------------------------
-# Sidebar
-# ---------------------------------------------------
-
-st.sidebar.title("📌 Project Information")
-
-st.sidebar.info("""
-### Model
-CNN + BiLSTM
-
----
-
-### Dataset
-RAVDESS
-
----
-
-### Audio Features
+with st.sidebar:
+    st.header("🧠 Project")
+    st.success("CNN + BiLSTM")
+    st.info("Dataset: RAVDESS")
+    st.markdown("""
+### Features
 - MFCC
 - Chroma
 - Mel Spectrogram
-- RMS Energy
-- Zero Crossing Rate
+- RMS
+- ZCR
 - Spectral Centroid
-
----
-
-### Emotions
-- Angry
-- Calm
-- Disgust
-- Fear
-- Happy
-- Neutral
-- Sad
-- Surprise
 """)
 
-# ---------------------------------------------------
-# Load Label Encoder
-# ---------------------------------------------------
+uploaded = st.file_uploader("📤 Upload WAV file", type=["wav"])
 
-encoder = joblib.load("saved_models/label_encoder.pkl")
-
-# ---------------------------------------------------
-# File Upload
-# ---------------------------------------------------
-
-uploaded_file = st.file_uploader(
-    "Upload WAV File",
-    type=["wav"]
-)
-
-st.info(
-    "Supported format: **.wav** | Sample Rate: **22050 Hz**"
-)
-
-# ---------------------------------------------------
-# Prediction
-# ---------------------------------------------------
-
-if uploaded_file is not None:
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio:
-
-        temp_audio.write(uploaded_file.read())
-
-        temp_path = temp_audio.name
+if uploaded:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
+        f.write(uploaded.read())
+        temp_path = f.name
 
     st.audio(temp_path)
 
-    st.subheader("🎵 Uploaded Audio")
+    if st.button("🚀 Predict Emotion"):
+        start = time.time()
+        emotion, confidence = predict_emotion(temp_path)
+        elapsed = time.time() - start
 
-    st.success("Audio uploaded successfully.")
+        st.markdown(f"""
+<div class="prediction-card">
+<h3>Predicted Emotion</h3>
+<h1>{emotion}</h1>
+<p>Prediction Time: {elapsed:.2f} sec</p>
+</div>
+""", unsafe_allow_html=True)
 
-    if st.button("🎯 Predict Emotion"):
-
-        with st.spinner("Predicting Emotion..."):
-
-            start = time.time()
-
-            try:
-                emotion, confidence = predict_emotion(temp_path)
-
-                end = time.time()
-
-                prediction_time = end - start
-
-            except Exception as e:
-                st.error(f"Prediction Failed: {e}")
-                st.stop()
-
-        # ---------------- Prediction Card ----------------
-
-        st.markdown(
-            f"""
-            <div class="prediction-card">
-
-            Predicted Emotion
-
-            <br><br>
-
-            {emotion}
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        # ---------------- Metrics ----------------
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.metric(
-                "Predicted Emotion",
-                emotion
-            )
-
-        with col2:
-            st.metric(
-                "Confidence",
-                f"{max(confidence):.2f}%"
-            )
-
-        st.caption(
-            f"Prediction completed in {prediction_time:.2f} seconds."
-)
-
-        # ---------------- Confidence Chart ----------------
-
-        st.subheader("📊 Confidence Distribution")
+        encoder = joblib.load("saved_models/label_encoder.pkl")
 
         df = pd.DataFrame({
-
             "Emotion": encoder.classes_,
             "Confidence": confidence
-
-        })
-
-        df = df.sort_values(
-            by="Confidence",
-            ascending=False
-        )
+        }).sort_values("Confidence", ascending=False)
 
         fig = px.bar(
-
             df,
-
             x="Confidence",
-
             y="Emotion",
-
             orientation="h",
-
-            text="Confidence",
-
             color="Confidence",
-
-            color_continuous_scale="Blues"
-
-        )
-
-        fig.update_traces(
-
-            texttemplate="%{text:.2f}",
-
-            textposition="outside"
-
+            color_continuous_scale="Blues",
+            text="Confidence"
         )
 
         fig.update_layout(
-
-            xaxis_title="Confidence (%)",
-
-            yaxis_title="Emotion"
-
+            template="plotly_white",
+            coloraxis_showscale=False,
+            height=450
         )
 
-        st.plotly_chart(
+        fig.update_traces(texttemplate="%{text:.2f} %")
 
-            fig,
+        st.plotly_chart(fig, use_container_width=True)
 
-            use_container_width=True
+        c1, c2, c3 = st.columns(3)
 
+        c1.metric("Model", "CNN + BiLSTM")
+        c2.metric("Dataset", "RAVDESS")
+        c3.metric("Emotions", "8")
+
+        report = f"Predicted Emotion: {emotion}\n\n"
+
+        for e, s in zip(encoder.classes_, confidence):
+            report += f"{e}: {s:.2f}%\n"
+
+        st.download_button(
+            "⬇ Download Report",
+            report,
+            file_name="prediction_result.txt"
         )
 
 st.markdown("---")
 
-st.subheader("📌 Model Information")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.metric("Model", "CNN + BiLSTM")
-
-with col2:
-    st.metric("Dataset", "RAVDESS")
-
-with col3:
-    st.metric("Emotions", "8")
-
-st.markdown("---")
-
-st.subheader("📌 Model Information")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.metric("Model", "CNN + BiLSTM")
-
-with col2:
-    st.metric("Dataset", "RAVDESS")
-
-with col3:
-    st.metric("Emotions", "8")
-
-with st.expander("📖 About This Project"):
-
+with st.expander("📖 About Project"):
     st.write("""
-This application predicts human emotions from speech using a CNN + BiLSTM Deep Learning model.
+This application performs Speech Emotion Recognition using a
+CNN + Bidirectional LSTM model trained on the RAVDESS dataset.
 
-Dataset:
-RAVDESS
+Workflow:
 
-Audio Features:
-- MFCC
-- Chroma
-- Mel Spectrogram
-- RMS Energy
-- Zero Crossing Rate
-- Spectral Centroid
-
-Frameworks:
-TensorFlow
-Librosa
-Streamlit
-Scikit-learn
+1. Upload Audio
+2. Audio Preprocessing
+3. MFCC Feature Extraction
+4. CNN + BiLSTM Prediction
+5. Emotion Classification
+6. Confidence Visualization
 """)
-# ---------------------------------------------------
-# Footer
-# ---------------------------------------------------
 
 st.markdown("---")
-
-st.markdown(
-"""
-<div class="footer">
-
-Developed using TensorFlow • Streamlit • Librosa
-
-</div>
-""",
-unsafe_allow_html=True
-)
+st.caption("Developed by Vanshika Mehra • TensorFlow • Streamlit • Librosa")
